@@ -1,112 +1,138 @@
 #include <stdio.h>
+#include <unistd.h>
 #include <string.h>
-#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netdb.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <sys/ioctl.h>
-#include <pthread.h>
-#include <unistd.h>
 
- 
-void* Servidor(void* arg)
-{
-    /*Buffer de entrada (armazena buffer do cliente)*/
-    char buffer_do_cliente[256];
-    /*Cast do ponteiro*/
-    int sockEntrada = *(int *) arg;
-    /*Loop "infinito"*/
-    printf("Aguardando as mensagens... ");
-    for (;;)
-    {
-        /*Le o que vem do cliente*/
-        recv(sockEntrada, buffer_do_cliente, sizeof (buffer_do_cliente),0);
-        if (strcmp(buffer_do_cliente, "sair") != 0)
-        {
-            /*Se buffer == sair cai fora*/
-            printf("%s\n",buffer_do_cliente);
-        }
-        else
-             {
-                 /*Encerra o descritor*/
-                 close(sockEntrada);
-                 /*Encerra a thread*/
-                 pthread_exit((void*) 0);
-             }
-    }
-}
- 
-int configuracaoServidor()
-{
-    /*Cria o descritor*/
-    int sockfd;
-    /*Declaracao da estrutura*/
-    struct sockaddr_in serverAddr;
-    /*Cria o socket*/
-    if ((sockfd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
-    {
-      printf("Erro no Socket\n");
-      exit(1);
-    }
-    /*Zera a estrutura*/
-    memset(&serverAddr, 0, sizeof (serverAddr));
-    /*Seta a familia*/
-    serverAddr.sin_family = AF_INET;
-    /*Seta os IPS (A constante INADDR_ANY e todos os ips ou qualquer ip) htonl -> conversao*/
-    serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    /*Define a porta*/
-    serverAddr.sin_port = htons(6881);
-    /*Faz a bindagem (cola, gruda, conecta seja o que for)*/
-    if (bind(sockfd, (struct sockaddr *) & serverAddr, sizeof (serverAddr)) < 0)
-    {
-      printf("Erro no Socket\n");
-      exit(1);
-     }
-    /*Fica na escuta de ate 5 clientes*/
-    if (listen(sockfd, 5) < 0)
-    {
-      printf("Erro no Socket\n");
-      exit(1);
-    }
-    return sockfd;
-}
- 
-int main()
-{
-    system("clear");
-    /*Declaracao da estrutura*/
-    struct sockaddr_in serverAddr;
-    /*Retorna da funcao e o descritor*/
-    int sockfd = configuracaoServidor();
- 
-    /*Loop "infinito"*/
-    while (1)
-    {
-        int clienteSockfd;
-        struct sockaddr_in clienteAddr;
-        /*tamanho da estrutura*/
-        unsigned int clntLen;
-        clntLen = sizeof (clienteAddr);
-        /*declara uma thread*/
-    pthread_t thread;
-    /*Fica no aguardo da conexao do cliente*/
-        if ((clienteSockfd = accept(sockfd, (struct sockaddr *) & clienteAddr, &clntLen)) < 0)
-        {
-      printf("Erro no Socket\n");
-      exit(1);
-    }
-        /*Inicializa a thread*/
-        if (pthread_create(&thread, NULL, Servidor, &clienteSockfd) != 0)
-       {
-            printf("Erro na Thread\n");
-            exit(1);
-       }
- 
-        pthread_detach(thread);
+
+
+void lerRequisicao(char requisicao[] ){
+
+
+    char metado[10] = "\0";
+    char protocolo[10] = "\0";;
+    char versao[10] = "\0";
+    char endCliente[30];
+
+
+    for(int x = 0; x < 20; x++){
+            
+        metado[x] = requisicao[x];
+       // printf("--> %s e x = %d \n",metado,x);
+
+        if(requisicao[x] == '/'){
+            metado[x]='\n';
+            x++;
+
+            for(int z=0;z<8;z++){
+                x++;
+
+               // printf("antes--> %s e z = %d \n",protocolo,z);
+                protocolo[z] = requisicao[x];
+               // printf("--> %s e z = %d \n",protocolo,z);
+
+                
+                if(requisicao[x] == '/'){
+                    protocolo[z]='\n';
+                    x++;
+
+                    for(int v = 0; v<8;v++){
+
+                        versao[v] = requisicao[x];
+                        x++;
+                        if(requisicao[x] == '\n'){
+                            versao[v+1] = '\n\n';
+                            x=10000;
+                            z=10000;
+                            v=10000;
+                            
+
+                        }
+                    }
+
+
+                }
+
+
+
+            }
+
+        }    
+
+
     }
 
+    //strcpy(metado,requisicao);
+    printf("========================\n");
+    printf("metado: %s",metado);
+    printf("protocolo: %s",protocolo);
+    printf("versao: %s",versao);
+    printf("========================\n");
     
-    return(0);
+    //return 0;
+}
+
+
+
+
+
+
+int main(){
+    char buff[1000];
+
+    struct sockaddr_in caddr;
+    struct sockaddr_in saddr = {
+        .sin_family      = AF_INET,
+        .sin_addr.s_addr = htonl(INADDR_ANY),
+        .sin_port        = htons(5000)
+    };
+
+    int server = socket(AF_INET, SOCK_STREAM, 0);
+    int client, x;
+    int csize  = sizeof caddr;
+
+    bind(server, (struct sockaddr *) &saddr, sizeof saddr);
+    listen(server, 5);
+    
+
+    while(1){
+
+
+        puts(" Inicio do while de escuta \n");
+
+        client = accept(server, (struct sockaddr *) &caddr, &csize);
+        
+        puts(" Recebeu um cliente e vai ler o buffer \n");
+
+        x = recv(client, buff, sizeof buff, 0);
+
+        printf(" Já leu o buffer\n");
+
+        lerRequisicao(buff);  // fazer a leitura da requisição do navegar 
+            
+            
+            if (strcmp(buff, "ssss") == 0){
+                send(client, "SIMMM\n",6, 0);
+            }
+
+            if (strcmp(buff, "nnnn") == 0){    
+                send(client, "NAOOO\n",6, 0);
+            }
+
+            //send(client, buff,x, 0);
+
+            puts(" Apos os ifs \n \n");
+
+            puts(buff);
+            fflush(stdout);
+
+            if (strcmp(buff, "sair") != 0){
+                close(client);
+                puts(" fechou a conexão \n");
+            }
+        puts(" FIm do while  \n");
+    }
+
+    return 0;
 }
