@@ -1,3 +1,10 @@
+/*
+*   Matheus Barbosa Consul
+*   
+*
+*/
+
+
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
@@ -11,10 +18,10 @@ void lerRequisicao(char requisicao[] ){
 
 
     char metado[10] = "\0";
-    char protocolo[10] = "\0";;
+    char protocolo[10] = "\0";
     char versao[10] = "\0";
     char endCliente[30];
-
+    
 
     for(int x = 0; x < 20; x++){
             
@@ -69,7 +76,7 @@ void lerRequisicao(char requisicao[] ){
     printf("protocolo: %s",protocolo);
     printf("versao: %s",versao);
     printf("========================\n");
-    
+
     //return 0;
 }
 
@@ -80,6 +87,10 @@ void lerRequisicao(char requisicao[] ){
 
 int main(){
     char buff[1000];
+
+    char resposta[500] = "HTTP/1.1 301 Not found\r\nConnection: close\r\nDate: Tue, 09 Aug 2011 15:44:04 GMT\r\nServer: Apache/2.2.3(CentOS)\r\nLast-Modified: Tue, 09 Aug 2020 15:11:03 GMT\r\nContent-Length: 6821\r\nContent-Type: text/html\r\n";
+
+
 
     struct sockaddr_in caddr;
     struct sockaddr_in saddr = {
@@ -107,7 +118,7 @@ int main(){
 
         x = recv(client, buff, sizeof buff, 0);
 
-        printf(" Já leu o buffer\n");
+       // printf(" Já leu o buffer\n");
 
         lerRequisicao(buff);  // fazer a leitura da requisição do navegar 
             
@@ -121,6 +132,8 @@ int main(){
             }
 
             //send(client, buff,x, 0);
+
+            send(client,resposta,500, 0);
 
             puts(" Apos os ifs \n \n");
 
@@ -136,3 +149,4 @@ int main(){
 
     return 0;
 }
+
