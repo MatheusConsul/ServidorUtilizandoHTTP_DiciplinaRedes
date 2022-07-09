@@ -15,11 +15,13 @@
 #include "servidor.h"
 #include <pthread.h>
 
-int numMaxClientes = 10;
-int numClientesOnline = 0;
+#define numMaxClientes 10
+int numClientesOnline = -1;
+pthread_t thredClientes[numMaxClientes];
+pthread_t p12;
 
-void lerRequisicao(char requisicao[], int cliente);
-void responderCliente (int cliente);
+int lerRequisicao(char requisicao[], int cliente);
+void responderCliente (int cliente, int x);
 void *novoCliente(void *  client);
 
 
@@ -30,7 +32,7 @@ void iniciarServidor (){
     struct sockaddr_in saddr = {
         .sin_family      = AF_INET,
         .sin_addr.s_addr = htonl(INADDR_ANY),
-        .sin_port        = htons(4000)
+        .sin_port        = htons(5000)
     };
 
 
@@ -40,17 +42,17 @@ void iniciarServidor (){
 
     bind(server, (struct sockaddr *) &saddr, sizeof saddr);
     listen(server, 5);
-    pthread_t thredClientes[numMaxClientes];
-    pthread_t p1;
 
 
     while(1){
         puts(" Inicio do while de escuta \n");
 
         client = accept(server, (struct sockaddr *) &caddr, &csize);
-
-        //pthread_create(&thredClientes[numClientesOnline],NULL, novoCliente,(void*)(&client));
-        pthread_create(&p1,NULL, novoCliente,(void*)(&client));
+        printf("\n NUMERO DO CLIENT DO ACCEPT: %d",client);
+        numClientesOnline++;
+        
+        pthread_create(&thredClientes[numClientesOnline],NULL, novoCliente,&client);
+       // pthread_create(&p12,NULL, novoCliente,&client);
        
 
             // cria thread para tratar o recebimento de nova conexão 
@@ -72,45 +74,58 @@ void iniciarServidor (){
 
 void * novoCliente(void * client ){  // para tratar uma nova conexão 
 
-    int *cliente = (int*)(client);
-
-
-    numClientesOnline++;
+    int * cliente = ((int*)client);
     
     char buff[1000];
 
     printf(" Recebeu um cliente %d e vai ler o buffer \n",numClientesOnline); // não sei porque parece que o estado de espera esta sendo na leitura do buffer
 
-    recv(*cliente, buff, sizeof buff, 0);
+    //recv(*cliente, buff, sizeof buff, 0);
    
-    printf(" FEZ a leitura do buffer do cliente numero %d \n",numClientesOnline);
-   
+    //printf(" FEZ a leitura do buffer do cliente numero %d \n",numClientesOnline);
+    printf("\n Vai entrar no loop de leitura com o cliente");
     puts(buff);
+    int x = 1;
+   
+    do{
 
-    lerRequisicao(buff,*cliente);  // fazer a leitura da requisição do navegar 
+    recv(*cliente, buff, sizeof buff, 0);
+    x = lerRequisicao(buff,*cliente);  // fazer a leitura da requisição do navegar
+
+
+    }while (x == 1);
+
+     
     memset(&buff, 0, sizeof buff);
 }
 
 
 
 
-void responderCliente (int cliente){
+void responderCliente (int cliente, int x){
 
-    char resposta[500] = "HTTP/1.0 200 OK\nDate: Tue, 09 Aug 2011 15:44:04 GMT\nServer: Apache/2.2.3(CentOS)\nLast-Modified: Tue, 09 Aug 2020 15:11:03 GMT\nContent-Length: 6821\nContent-Type: text/html\nConnection: Closed\n\n<html><body><h1>Esta e a resposta do servidor!<h1><body></html>";
+    char resposta[500] = "HTTP/1.0 200 OK\nDate: Tue, 09 Aug 2011 15:44:04 GMT\nServer: Apache/2.2.3(CentOS)\nLast-Modified: Tue, 09 Aug 2020 15:11:03 GMT\nContent-Length: 6821\nContent-Type: text/html\nConnection: Closed\n\n<html><body><h1>Esta e a resposta do servidor cliente nº: !!!<h1><body></html>";
 
 
     send(cliente,resposta,500, 0); // endereço socket cliente, char de resposta, tamanho da resposta e 0 nao lembro.
 
     puts(" Apos enviar resposta dentro da função de enviar resposta\n \n");
 
-    close(cliente);
+    if (x == 0){
+        close(cliente);
+        puts("\n Fechando a conexão dentro da função de resposta\n \n");
+    }else{
+        printf("\n Conexão não foi fechada!!!");
+    }
+    
+    
 
-    puts(" Fechando a conexão dentro da função de resposta\n \n");
+    
 }
 
 
 
-void lerRequisicao(char requisicao[], int cliente ){
+int lerRequisicao(char requisicao[], int cliente ){
 
 
     char metado[10] = "\0";
@@ -167,15 +182,29 @@ void lerRequisicao(char requisicao[], int cliente ){
     }
 
     //strcpy(metado,requisicao);
+    metado[2]= '\0';  // apenas para teste no terminal 
+    metado[3]= '\0';
     printf("========================\n");
     printf("metado: %s",metado);
     printf("protocolo: %s",protocolo);
     printf("versao: %s",versao);
     printf("========================\n");
 
-    responderCliente(cliente);
+    
 
-    //return 0;
+    int x;
+
+    if (strcmp(metado, "nn") == 0){    
+        x=0;
+        printf(" verdadeiro no if de sair x=0");
+    }else {
+        printf("nao identificou comando de sair x = 1");
+        x=1;
+    }
+
+    responderCliente(cliente,x);    
+
+    return x;
 }
 
 
