@@ -1,10 +1,6 @@
 /*
 *   Matheus Barbosa Consul
-*   https://github.com/MatheusConsul/EC-Servidor-HTTP 
-*
-*   Codigo consegue receber uma requisição do cliente identificar o inicio do cabeçalho e enviar uma resposta.
-*   Como cliente foi usado o terminal e o navegador acessando o http://localhost:5000/
-*
+*   Gabriel Silveira Corrêa 
 */
 
 #include <stdio.h>
@@ -109,18 +105,18 @@ void responderCliente (int cliente){
 
 
     FILE *arquivo;
-
-    char caminho[100] = "/home/ec/Documentos/GitHub/EC-Servidor-HTTP/imagem001.jpeg";
+                             // caminho especifico do arquivo a ser enviado
+    char caminho[100] = "/home/ec/Documentos/GitHub/EC-Servidor-HTTP/3ª Versão/imagem001.jpeg"; 
 
 
     if ((arquivo = open(caminho, O_RDONLY)) > 0){
 
-            puts("Image Found.");
+            puts("Imagem encontrada.");
             int bytes;
             char buffer[1024];
 
             send(cliente, "HTTP/1.0 200 OK\r\nContent-Type: image/jpeg\r\n\r\n", 45, 0); 
-                bytes = read(arquivo,buffer,1024);
+            bytes = read(arquivo,buffer,1024);
             write(cliente,buffer,bytes);
 
 	        while ( (bytes=read(arquivo, buffer, 1024))>0 ) {// lendo o arquivo do buffer
